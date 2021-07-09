@@ -38,6 +38,8 @@ class Application {
   void initInstance();
   bool checkValidationLayerSupport();
   std::vector<const char*> getRequiredExtensions() const;
+  void pickPhysicalDevice();
+  static int rateDeviceSuitability(VkPhysicalDevice device);
 
   std::unique_ptr<VkInstance, void (*)(VkInstance*)> _instance{
     new VkInstance,
@@ -45,4 +47,5 @@ class Application {
       vkDestroyInstance(*instance, nullptr);
     }
   };
+  VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
 };

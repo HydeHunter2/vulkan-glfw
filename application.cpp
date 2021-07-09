@@ -1,3 +1,5 @@
+#include <map>
+
 #include "application.h"
 
 Application::Application() {
@@ -26,6 +28,7 @@ void Application::initWindow() {
 
 void Application::initVulkan() {
   initInstance();
+  pickPhysicalDevice();
 }
 
 void Application::initInstance() {
@@ -89,4 +92,43 @@ std::vector<const char*> Application::getRequiredExtensions() const {
   }
 
   return extensions;
+}
+
+void Application::pickPhysicalDevice() {
+  uint32_t deviceCount = 0;
+  vkEnumeratePhysicalDevices(*_instance, &deviceCount, nullptr);
+
+  if (deviceCount == 0) {
+    throw std::runtime_error("failed to find GPUs with Vulkan support!");
+  }
+
+  std::vector<VkPhysicalDevice> devices(deviceCount);
+  vkEnumeratePhysicalDevices(*_instance, &deviceCount, devices.data());
+
+  int maxScore = 0;
+  for (const auto& device : devices) {
+    int score = rateDeviceSuitability(device);
+
+    if (score > maxScore) {
+      _physicalDevice = device;
+      maxScore = score;
+    }
+  }
+
+  if (maxScore == 0) {
+    throw std::runtime_error("failed to find a suitable GPU!");
+  }
+}
+
+int Application::rateDeviceSuitability(VkPhysicalDevice device) {
+  VkPhysicalDeviceProperties deviceProperties;
+  VkPhysicalDeviceFeatures deviceFeatures;
+  vkGetPhysicalDeviceProperties(device, &deviceProperties);
+  vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+  if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+    return INT_MAX;
+  }
+
+  return deviceProperties.limits.maxImageDimension2D;
 }
