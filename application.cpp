@@ -1,0 +1,92 @@
+#include "application.h"
+
+Application::Application() {
+  initWindow();
+  initVulkan();
+}
+
+Application::~Application() {
+  glfwTerminate();
+}
+
+void Application::run() {
+  while (!glfwWindowShouldClose(_window.get())) {
+    glfwPollEvents();
+  }
+}
+
+void Application::initWindow() {
+  glfwInit();
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+  _window = {glfwCreateWindow(_width, _height, "Vulkan", nullptr, nullptr),
+             glfwDestroyWindow};
+}
+
+void Application::initVulkan() {
+  initInstance();
+}
+
+void Application::initInstance() {
+  if (kEnableValidationLayers && !checkValidationLayerSupport()) {
+    throw std::runtime_error("validation layers requested, but not available!");
+  }
+
+  VkApplicationInfo appInfo{};
+  appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+  appInfo.pApplicationName = "Application";
+  appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+  appInfo.pEngineName = "No Engine";
+  appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+  appInfo.apiVersion = VK_API_VERSION_1_0;
+
+  auto extensions = getRequiredExtensions();
+  VkInstanceCreateInfo createInfo{};
+  createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+  createInfo.pApplicationInfo = &appInfo;
+  createInfo.enabledExtensionCount = extensions.size();
+  createInfo.ppEnabledExtensionNames = extensions.data();
+  if (kEnableValidationLayers) {
+    createInfo.enabledLayerCount = kValidationLayers.size();
+    createInfo.ppEnabledLayerNames = kValidationLayers.data();
+  } else {
+    createInfo.enabledLayerCount = 0;
+  }
+
+  if (vkCreateInstance(&createInfo, nullptr, _instance.get()) != VK_SUCCESS) {
+    throw std::runtime_error("failed to create instance!");
+  }
+}
+
+bool Application::checkValidationLayerSupport() {
+  uint32_t layerCount;
+  vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+  std::vector<VkLayerProperties> availableLayers(layerCount);
+  vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+  for (const auto& layerName : kValidationLayers) {
+    if (std::find_if(availableLayers.begin(), availableLayers.end(),
+                     [layerName](VkLayerProperties& properties) {
+                       return strcmp(layerName, properties.layerName) == 0;
+                     }) == availableLayers.end()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+std::vector<const char*> Application::getRequiredExtensions() const {
+  uint32_t glfwExtensionCount = 0;
+  auto glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+  std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+  if (kEnableValidationLayers) {
+    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+  }
+
+  return extensions;
+}
