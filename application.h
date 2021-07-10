@@ -79,6 +79,7 @@ class Application {
   void initGraphicsPipeline();
   static std::vector<char> readFile(const std::string& filename);
   VkShaderModule createShaderModule(const std::vector<char>& code);
+  void initRenderPass();
 
   std::unique_ptr<VkInstance, void (*)(VkInstance*)> _instance{
     new VkInstance,
@@ -116,6 +117,12 @@ class Application {
         for (auto& imageView : *imageViews) {
           vkDestroyImageView(*_device, imageView, nullptr);
         }
+      }
+  };
+  std::unique_ptr<VkRenderPass, std::function<void(VkRenderPass*)>> _renderPass{
+      new VkRenderPass,
+      [this](VkRenderPass* renderPass) {
+        vkDestroyRenderPass(*_device, *renderPass, nullptr);
       }
   };
   std::unique_ptr<VkPipelineLayout, std::function<void(VkPipelineLayout*)>> _pipelineLayout{
