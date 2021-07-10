@@ -118,4 +118,10 @@ class Application {
         }
       }
   };
+  std::unique_ptr<VkPipelineLayout, std::function<void(VkPipelineLayout*)>> _pipelineLayout{
+      new VkPipelineLayout,
+      [this](VkPipelineLayout* pipelineLayout) {
+        vkDestroyPipelineLayout(*_device, *pipelineLayout, nullptr);
+      }
+  };
 };
