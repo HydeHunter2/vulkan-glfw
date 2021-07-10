@@ -80,6 +80,7 @@ class Application {
   static std::vector<char> readFile(const std::string& filename);
   VkShaderModule createShaderModule(const std::vector<char>& code);
   void initRenderPass();
+  void initFramebuffers();
 
   std::unique_ptr<VkInstance, void (*)(VkInstance*)> _instance{
     new VkInstance,
@@ -135,6 +136,14 @@ class Application {
       new VkPipeline,
       [this](VkPipeline* graphicsPipeline) {
         vkDestroyPipeline(*_device, *graphicsPipeline, nullptr);
+      }
+  };
+  std::unique_ptr<std::vector<VkFramebuffer>, std::function<void(std::vector<VkFramebuffer>*)>> _swapChainFramebuffers{
+      new std::vector<VkFramebuffer>,
+      [this](std::vector<VkFramebuffer>* framebuffers) {
+        for (auto& framebuffer : *framebuffers) {
+          vkDestroyFramebuffer(*_device, framebuffer, nullptr);
+        }
       }
   };
 };
