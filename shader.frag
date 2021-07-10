@@ -19,6 +19,7 @@ const vec3 kVertical = vec3(0, kViewportHeight, 0);
 const vec3 kLowerLeftCorner = kCamera - (kHorizontal / 2 + kVertical / 2 + vec3(0, 0, kFocalLength));
 
 const int kNumberOfSpheres = 2;
+const int kNumberOfAntialisingSamples = 25;
 const int kMaxDepth = 50;
 
 float r = 1.0;
@@ -130,18 +131,24 @@ vec3 processRay(Ray ray, in Sphere[kNumberOfSpheres] world) {
 }
 
 void main() {
-    float x = gl_FragCoord.x / kWidth;
-    float y = 1. - gl_FragCoord.y / kHeight;
-
     Sphere[kNumberOfSpheres] world = {
         Sphere(vec3(0, 0, -1), 0.5),
         Sphere(vec3(0, -100.5, -1), 100)
     };
 
-    Ray r = Ray(kCamera, normalized(kLowerLeftCorner +
-                                    x * kHorizontal +
-                                    y * kVertical -
-                                    kCamera));
+    Ray ray;
+    ray.origin = kCamera;
+    vec3 color = vec3(0, 0, 0);
+    for (int i = 0; i < kNumberOfAntialisingSamples; ++i) {
+        float x = (gl_FragCoord.x + random()) / (kWidth - 1.0);
+        float y = 1.0 - (gl_FragCoord.y + random()) / (kHeight - 1.0);
+        ray.direction = normalized(kLowerLeftCorner +
+                                   x * kHorizontal +
+                                   y * kVertical -
+                                   kCamera);
 
-    outColor = vec4(processRay(r, world), 1.0);
+        color += processRay(ray, world);
+    }
+
+    outColor = vec4(color / kNumberOfAntialisingSamples, 1.0);
 }
