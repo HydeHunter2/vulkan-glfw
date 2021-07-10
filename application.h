@@ -86,6 +86,7 @@ class Application {
   void initCommandPool();
   void initCommandBuffers();
   void initSyncObjects();
+  void drawFrame();
 
   std::unique_ptr<VkInstance, void (*)(VkInstance*)> _instance{
     new VkInstance,
