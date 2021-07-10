@@ -36,6 +36,7 @@ void Application::initVulkan() {
   initFramebuffers();
   initCommandPool();
   initCommandBuffers();
+  initSyncObjects();
 }
 
 void Application::initInstance() {
@@ -635,6 +636,28 @@ void Application::initCommandBuffers() {
 
     if (vkEndCommandBuffer(_commandBuffers[i]) != VK_SUCCESS) {
       throw std::runtime_error("failed to record command buffer!");
+    }
+  }
+}
+
+void Application::initSyncObjects() {
+  _imageAvailableSemaphores->resize(kMaxFramesInFlight);
+  _renderFinishedSemaphores->resize(kMaxFramesInFlight);
+  _inFlightFences->resize(kMaxFramesInFlight);
+  _imagesInFlight.resize(swapChainImages.size(), VK_NULL_HANDLE);
+
+  VkSemaphoreCreateInfo semaphoreInfo{};
+  semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+  VkFenceCreateInfo fenceInfo{};
+  fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+  for (size_t i = 0; i < kMaxFramesInFlight; i++) {
+    if (vkCreateSemaphore(*_device, &semaphoreInfo, nullptr, &_imageAvailableSemaphores->at(i)) != VK_SUCCESS ||
+        vkCreateSemaphore(*_device, &semaphoreInfo, nullptr, &_renderFinishedSemaphores->at(i)) != VK_SUCCESS ||
+        vkCreateFence(*_device, &fenceInfo, nullptr, &_inFlightFences->at(i)) != VK_SUCCESS) {
+      throw std::runtime_error("failed to create synchronization objects for a frame!");
     }
   }
 }

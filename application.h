@@ -45,6 +45,8 @@ class Application {
     }
   };
 
+  const int kMaxFramesInFlight = 2;
+
   const std::vector<const char*> kDeviceExtensions = {
       VK_KHR_SWAPCHAIN_EXTENSION_NAME,
       "VK_KHR_portability_subset"
@@ -83,6 +85,7 @@ class Application {
   void initFramebuffers();
   void initCommandPool();
   void initCommandBuffers();
+  void initSyncObjects();
 
   std::unique_ptr<VkInstance, void (*)(VkInstance*)> _instance{
     new VkInstance,
@@ -155,4 +158,31 @@ class Application {
       }
   };
   std::vector<VkCommandBuffer> _commandBuffers;
+
+  std::unique_ptr<std::vector<VkSemaphore>, std::function<void(std::vector<VkSemaphore>*)>> _imageAvailableSemaphores{
+      new std::vector<VkSemaphore>,
+      [this](std::vector<VkSemaphore>* semaphores) {
+        for (auto& semaphore : *semaphores) {
+          vkDestroySemaphore(*_device, semaphore, nullptr);
+        }
+      }
+  };
+  std::unique_ptr<std::vector<VkSemaphore>, std::function<void(std::vector<VkSemaphore>*)>> _renderFinishedSemaphores{
+      new std::vector<VkSemaphore>,
+      [this](std::vector<VkSemaphore>* semaphores) {
+        for (auto& semaphore : *semaphores) {
+          vkDestroySemaphore(*_device, semaphore, nullptr);
+        }
+      }
+  };
+  std::unique_ptr<std::vector<VkFence>, std::function<void(std::vector<VkFence>*)>> _inFlightFences{
+      new std::vector<VkFence>,
+      [this](std::vector<VkFence>* fences) {
+        for (auto& fence : *fences) {
+          vkDestroyFence(*_device, fence, nullptr);
+        }
+      }
+  };
+  std::vector<VkFence> _imagesInFlight;
+  size_t _currentFrame = 0;
 };
