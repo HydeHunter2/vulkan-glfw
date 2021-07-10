@@ -1,5 +1,4 @@
 #include "application.h"
-#include <iostream>
 
 Application::Application() {
   initWindow();
