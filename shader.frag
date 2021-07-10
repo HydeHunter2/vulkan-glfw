@@ -18,6 +18,8 @@ const vec3 kHorizontal = vec3(kViewportWidth, 0, 0);
 const vec3 kVertical = vec3(0, kViewportHeight, 0);
 const vec3 kLowerLeftCorner = kCamera - (kHorizontal / 2 + kVertical / 2 + vec3(0, 0, kFocalLength));
 
+const int kNumberOfSpheres = 2;
+
 float LengthSquared(in vec3 coords) {
     return dot(coords, coords);
 }
@@ -73,11 +75,23 @@ bool SphereHit(in Sphere sphere, in Ray ray, float t_min, float t_max, inout Hit
 
     return true;
 }
+bool SpheresHit(in Sphere[kNumberOfSpheres] spheres, in Ray ray, float t_min, float t_max, inout HitRecord hit_record) {
+    bool hit_anything = false;
+    float closest_t = t_max;
+    for (int i = 0; i < kNumberOfSpheres; ++i) {
+        if (SphereHit(spheres[i], ray, t_min, closest_t, hit_record)) {
+            hit_anything = true;
+            closest_t = hit_record.t;
+        }
+    }
 
-vec3 processRay(in Ray ray) {
+    return hit_anything;
+}
+
+vec3 processRay(in Ray ray, in Sphere[kNumberOfSpheres] world) {
     HitRecord hit_record;
-    if (SphereHit(Sphere(vec3(0, 0, -1), 0.5), ray, 0, kInfinity, hit_record)) {
-        return vec3(1, 0, 0);
+    if (SpheresHit(world, ray, 0, kInfinity, hit_record)) {
+        return (hit_record.normal + vec3(1, 1, 1)) / 2;
     }
 
     float skyCoefficient = (ray.direction.y + 1.0) / 2.0;
@@ -88,10 +102,15 @@ void main() {
     float x = gl_FragCoord.x / kWidth;
     float y = 1. - gl_FragCoord.y / kHeight;
 
+    Sphere[kNumberOfSpheres] world = {
+    Sphere(vec3(0, 0, -1), 0.5),
+    Sphere(vec3(0, -100.5, -1), 100)
+    };
+
     Ray r = Ray(kCamera, Normalized(kLowerLeftCorner +
                                     x * kHorizontal +
                                     y * kVertical -
                                     kCamera));
 
-    outColor = vec4(processRay(r), 1.0);
+    outColor = vec4(processRay(r, world), 1.0);
 }
