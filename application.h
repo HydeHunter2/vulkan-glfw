@@ -46,6 +46,7 @@ class Application {
   void pickPhysicalDevice();
   static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
   static int rateDeviceSuitability(VkPhysicalDevice device);
+  void initLogicalDevice();
 
   std::unique_ptr<VkInstance, void (*)(VkInstance*)> _instance{
     new VkInstance,
@@ -54,4 +55,11 @@ class Application {
     }
   };
   VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
+  std::unique_ptr<VkDevice, void (*)(VkDevice*)> _device{
+      new VkDevice,
+      [](VkDevice* device) {
+        vkDestroyDevice(*device, nullptr);
+      }
+  };
+  VkQueue _graphicsQueue;
 };
