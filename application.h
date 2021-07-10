@@ -82,6 +82,7 @@ class Application {
   void initRenderPass();
   void initFramebuffers();
   void initCommandPool();
+  void initCommandBuffers();
 
   std::unique_ptr<VkInstance, void (*)(VkInstance*)> _instance{
     new VkInstance,
@@ -153,4 +154,5 @@ class Application {
         vkDestroyCommandPool(*_device, *commandPool, nullptr);
       }
   };
+  std::vector<VkCommandBuffer> _commandBuffers;
 };
