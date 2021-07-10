@@ -1,3 +1,3 @@
 # vulkan-glfw [Ray tracing]
 
-![IMAGE 2021-07-10 19:04:43](https://user-images.githubusercontent.com/46248839/125169215-d1c8f080-e1b1-11eb-8834-3f626feae765.jpg)
+![IMAGE 2021-07-10 21:00:58](https://user-images.githubusercontent.com/46248839/125172349-f3ca6f00-e1c1-11eb-8ab2-c9383c8eb78d.jpg)
