@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <optional>
+#include <fstream>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -75,6 +76,9 @@ class Application {
   VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
   void initSwapChain();
   void initImageViews();
+  void initGraphicsPipeline();
+  static std::vector<char> readFile(const std::string& filename);
+  VkShaderModule createShaderModule(const std::vector<char>& code);
 
   std::unique_ptr<VkInstance, void (*)(VkInstance*)> _instance{
     new VkInstance,
