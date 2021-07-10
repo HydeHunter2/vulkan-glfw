@@ -1,5 +1,3 @@
-#include <map>
-
 #include "application.h"
 
 Application::Application() {
@@ -120,11 +118,36 @@ void Application::pickPhysicalDevice() {
   }
 }
 
-int Application::rateDeviceSuitability(VkPhysicalDevice device) {
+Application::QueueFamilyIndices Application::findQueueFamilies(VkPhysicalDevice device) {
+  QueueFamilyIndices indices;
+
+  uint32_t queueFamilyCount = 0;
+  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+  std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+  for (int i = 0; i < queueFamilyCount; ++i) {
+    if (queueFamilies.at(i).queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+      indices.graphicsFamily = i;
+      break;
+    }
+  }
+
+  return indices;
+}
+
+int Application::rateDeviceSuitability(VkPhysicalDevice device) {  // TODO: Refactor rating system
   VkPhysicalDeviceProperties deviceProperties;
   VkPhysicalDeviceFeatures deviceFeatures;
   vkGetPhysicalDeviceProperties(device, &deviceProperties);
   vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+  QueueFamilyIndices indices = findQueueFamilies(device);
+
+  if (!indices.graphicsFamily.has_value()) {
+    return 0;
+  }
 
   if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
     return INT_MAX;
@@ -132,3 +155,4 @@ int Application::rateDeviceSuitability(VkPhysicalDevice device) {
 
   return deviceProperties.limits.maxImageDimension2D;
 }
+

@@ -3,6 +3,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <optional>
 #include <memory>
 #include <vector>
 
@@ -24,6 +25,10 @@ class Application {
 
   // Vulkan
 
+  struct QueueFamilyIndices {
+    std::optional<uint32_t> graphicsFamily;
+  };
+
   const std::vector<const char*> kValidationLayers = {
     "VK_LAYER_KHRONOS_validation"
   };
@@ -39,6 +44,7 @@ class Application {
   bool checkValidationLayerSupport();
   std::vector<const char*> getRequiredExtensions() const;
   void pickPhysicalDevice();
+  static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
   static int rateDeviceSuitability(VkPhysicalDevice device);
 
   std::unique_ptr<VkInstance, void (*)(VkInstance*)> _instance{
