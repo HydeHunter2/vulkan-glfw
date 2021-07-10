@@ -19,6 +19,7 @@ const vec3 kVertical = vec3(0, kViewportHeight, 0);
 const vec3 kLowerLeftCorner = kCamera - (kHorizontal / 2 + kVertical / 2 + vec3(0, 0, kFocalLength));
 
 const int kNumberOfSpheres = 2;
+const int kMaxDepth = 50;
 
 float r = 1.0;
 float random() {
@@ -34,28 +35,25 @@ vec3 randomVec3(float min, float max) {
                 random(min, max));
 }
 vec3 randomInHemisphere(in vec3 normal) {
-    vec3 vector = random_vec3(-1.0, 1.0);
+    vec3 vector = randomVec3(-1.0, 1.0);
     if (dot(vector, normal) > 0.0) {
         return vector;
     }
     return -vector;
 }
 
-float LengthSquared(in vec3 coords) {
+float lengthSquared(in vec3 coords) {
     return dot(coords, coords);
 }
-float Length(in vec3 vector) {
-    return sqrt(LengthSquared(vector));
-}
-vec3 Normalized(in vec3 vector) {
-    return vector / Length(vector);
+vec3 normalized(in vec3 vector) {
+    return vector / length(vector);
 }
 
 struct Ray {
     vec3 origin;
-    vec3 direction;  // Direction should always be normalized (Length = 1.0)
+    vec3 direction;  // Direction should always be normalized (length = 1.0)
 };
-vec3 RayAt(in Ray ray, in float t) {
+vec3 rayAt(in Ray ray, in float t) {
     return (ray.origin + t * ray.direction);
 }
 
@@ -68,12 +66,12 @@ struct HitRecord {
     vec3 normal;
     float t;
 };
-bool SphereHit(in Sphere sphere, in Ray ray, float t_min, float t_max, inout HitRecord hit_record) {
+bool sphereHit(in Sphere sphere, in Ray ray, float t_min, float t_max, inout HitRecord hit_record) {
     vec3 oc = ray.origin - sphere.center;
 
-    float a = LengthSquared(ray.direction);
+    float a = lengthSquared(ray.direction);
     float half_b = dot(oc, ray.direction);
-    float c = LengthSquared(oc) - sphere.radius * sphere.radius;
+    float c = lengthSquared(oc) - sphere.radius * sphere.radius;
 
     float discriminant = half_b * half_b - a * c;
     if (discriminant < 0) {
@@ -91,16 +89,16 @@ bool SphereHit(in Sphere sphere, in Ray ray, float t_min, float t_max, inout Hit
     }
 
     hit_record.t = root;
-    hit_record.point = RayAt(ray, hit_record.t);
+    hit_record.point = rayAt(ray, hit_record.t);
     hit_record.normal = (hit_record.point - sphere.center) / sphere.radius;
 
     return true;
 }
-bool SpheresHit(in Sphere[kNumberOfSpheres] spheres, in Ray ray, float t_min, float t_max, inout HitRecord hit_record) {
+bool spheresHit(in Sphere[kNumberOfSpheres] spheres, in Ray ray, float t_min, float t_max, inout HitRecord hit_record) {
     bool hit_anything = false;
     float closest_t = t_max;
     for (int i = 0; i < kNumberOfSpheres; ++i) {
-        if (SphereHit(spheres[i], ray, t_min, closest_t, hit_record)) {
+        if (sphereHit(spheres[i], ray, t_min, closest_t, hit_record)) {
             hit_anything = true;
             closest_t = hit_record.t;
         }
@@ -108,15 +106,27 @@ bool SpheresHit(in Sphere[kNumberOfSpheres] spheres, in Ray ray, float t_min, fl
 
     return hit_anything;
 }
-
-vec3 processRay(in Ray ray, in Sphere[kNumberOfSpheres] world) {
+vec3 processRay(Ray ray, in Sphere[kNumberOfSpheres] world) {
+    int depth = 0;
     HitRecord hit_record;
-    if (SpheresHit(world, ray, 0, kInfinity, hit_record)) {
-        return (hit_record.normal + vec3(1, 1, 1)) / 2;
+    while (spheresHit(world, ray, 0, kInfinity, hit_record)) {
+        if (depth >= kMaxDepth) {
+            return vec3(0, 0, 0);
+        }
+
+        float cos_alpha = dot(ray.direction, hit_record.normal) / (length(ray.direction) * length(hit_record.normal));
+        ray = Ray(hit_record.point, normalized(ray.direction - 2 * hit_record.normal * cos_alpha + randomInHemisphere(hit_record.normal)));
+        ray.origin += ray.direction / 100;  // To prevent detection the same object
+
+        ++depth;
     }
 
-    float skyCoefficient = (ray.direction.y + 1.0) / 2.0;
-    return vec3(1, 1, 1) - skyCoefficient * vec3(1, 0, 0);
+    if (depth == 0) {
+        float skyCoefficient = (ray.direction.y + 1.0) / 2.0;
+        return vec3(1, 1, 1) - skyCoefficient * vec3(1, 0, 0);
+    }
+
+    return vec3(1, 1, 1) / pow(2.0, depth);
 }
 
 void main() {
@@ -124,11 +134,11 @@ void main() {
     float y = 1. - gl_FragCoord.y / kHeight;
 
     Sphere[kNumberOfSpheres] world = {
-    Sphere(vec3(0, 0, -1), 0.5),
-    Sphere(vec3(0, -100.5, -1), 100)
+        Sphere(vec3(0, 0, -1), 0.5),
+        Sphere(vec3(0, -100.5, -1), 100)
     };
 
-    Ray r = Ray(kCamera, Normalized(kLowerLeftCorner +
+    Ray r = Ray(kCamera, normalized(kLowerLeftCorner +
                                     x * kHorizontal +
                                     y * kVertical -
                                     kCamera));
