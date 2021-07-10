@@ -3,9 +3,13 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <algorithm>
 #include <optional>
+#include <cstdint>
 #include <memory>
 #include <vector>
+#include <string>
+#include <set>
 
 class Application {
  public:
@@ -25,8 +29,24 @@ class Application {
 
   // Vulkan
 
+  struct SwapChainSupportDetails {
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> presentModes;
+  };
+
   struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
+
+    bool isComplete() {
+      return graphicsFamily.has_value() && presentFamily.has_value();
+    }
+  };
+
+  const std::vector<const char*> kDeviceExtensions = {
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+      "VK_KHR_portability_subset"
   };
 
   const std::vector<const char*> kValidationLayers = {
@@ -44,9 +64,16 @@ class Application {
   bool checkValidationLayerSupport();
   std::vector<const char*> getRequiredExtensions() const;
   void pickPhysicalDevice();
-  static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-  static int rateDeviceSuitability(VkPhysicalDevice device);
+  QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+  int rateDeviceSuitability(VkPhysicalDevice device);
   void initLogicalDevice();
+  void initSurface();
+  bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+  SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+  static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+  static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+  VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+  void initSwapChain();
 
   std::unique_ptr<VkInstance, void (*)(VkInstance*)> _instance{
     new VkInstance,
@@ -62,4 +89,21 @@ class Application {
       }
   };
   VkQueue _graphicsQueue;
+  VkQueue _presentQueue;
+  std::unique_ptr<VkSurfaceKHR, std::function<void(VkSurfaceKHR*)>> _surface{
+    new VkSurfaceKHR,
+    [this](VkSurfaceKHR* surface) {
+      vkDestroySurfaceKHR(*_instance, *surface, nullptr);
+    }
+  };
+  std::unique_ptr<VkSwapchainKHR, std::function<void(VkSwapchainKHR*)>> _swapChain{
+      new VkSwapchainKHR,
+      [this](VkSwapchainKHR* swapChain) {
+        vkDestroySwapchainKHR(*_device, *swapChain, nullptr);
+      }
+  };
+
+  std::vector<VkImage> swapChainImages;
+  VkFormat swapChainImageFormat;
+  VkExtent2D swapChainExtent;
 };
