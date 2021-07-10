@@ -34,6 +34,7 @@ void Application::initVulkan() {
   initRenderPass();
   initGraphicsPipeline();
   initFramebuffers();
+  initCommandPool();
 }
 
 void Application::initInstance() {
@@ -577,5 +578,16 @@ void Application::initFramebuffers() {
     if (vkCreateFramebuffer(*_device, &framebufferInfo, nullptr, &_swapChainFramebuffers->at(i)) != VK_SUCCESS) {
       throw std::runtime_error("failed to create framebuffer!");
     }
+  }
+}
+void Application::initCommandPool() {
+  QueueFamilyIndices queueFamilyIndices = findQueueFamilies(_physicalDevice);
+
+  VkCommandPoolCreateInfo poolInfo{};
+  poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+  poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+  if (vkCreateCommandPool(*_device, &poolInfo, nullptr, _commandPool.get()) != VK_SUCCESS) {
+    throw std::runtime_error("failed to create command pool!");
   }
 }

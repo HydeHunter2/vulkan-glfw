@@ -81,6 +81,7 @@ class Application {
   VkShaderModule createShaderModule(const std::vector<char>& code);
   void initRenderPass();
   void initFramebuffers();
+  void initCommandPool();
 
   std::unique_ptr<VkInstance, void (*)(VkInstance*)> _instance{
     new VkInstance,
@@ -144,6 +145,12 @@ class Application {
         for (auto& framebuffer : *framebuffers) {
           vkDestroyFramebuffer(*_device, framebuffer, nullptr);
         }
+      }
+  };
+  std::unique_ptr<VkCommandPool, std::function<void(VkCommandPool*)>> _commandPool{
+      new VkCommandPool,
+      [this](VkCommandPool* commandPool) {
+        vkDestroyCommandPool(*_device, *commandPool, nullptr);
       }
   };
 };
