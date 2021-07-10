@@ -131,4 +131,10 @@ class Application {
         vkDestroyPipelineLayout(*_device, *pipelineLayout, nullptr);
       }
   };
+  std::unique_ptr<VkPipeline, std::function<void(VkPipeline*)>> _graphicsPipeline{
+      new VkPipeline,
+      [this](VkPipeline* graphicsPipeline) {
+        vkDestroyPipeline(*_device, *graphicsPipeline, nullptr);
+      }
+  };
 };
