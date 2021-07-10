@@ -20,6 +20,27 @@ const vec3 kLowerLeftCorner = kCamera - (kHorizontal / 2 + kVertical / 2 + vec3(
 
 const int kNumberOfSpheres = 2;
 
+float r = 1.0;
+float random() {
+    r = fract(sin(r * dot(vec2(gl_FragCoord.x / kWidth, gl_FragCoord.y / kHeight), vec2(12.9898,78.233))) * 43758.5453123);
+    return r;
+}
+float random(float min, float max) {
+    return min + (max - min) * random();
+}
+vec3 randomVec3(float min, float max) {
+    return vec3(random(min, max),
+                random(min, max),
+                random(min, max));
+}
+vec3 randomInHemisphere(in vec3 normal) {
+    vec3 vector = random_vec3(-1.0, 1.0);
+    if (dot(vector, normal) > 0.0) {
+        return vector;
+    }
+    return -vector;
+}
+
 float LengthSquared(in vec3 coords) {
     return dot(coords, coords);
 }
