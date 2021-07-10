@@ -63,7 +63,7 @@ class Application {
   void initInstance();
   bool checkValidationLayerSupport();
   std::vector<const char*> getRequiredExtensions() const;
-  void pickPhysicalDevice();
+  void initPhysicalDevice();
   QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
   int rateDeviceSuitability(VkPhysicalDevice device);
   void initLogicalDevice();
@@ -74,6 +74,7 @@ class Application {
   static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
   VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
   void initSwapChain();
+  void initImageViews();
 
   std::unique_ptr<VkInstance, void (*)(VkInstance*)> _instance{
     new VkInstance,
@@ -102,8 +103,15 @@ class Application {
         vkDestroySwapchainKHR(*_device, *swapChain, nullptr);
       }
   };
-
   std::vector<VkImage> swapChainImages;
   VkFormat swapChainImageFormat;
   VkExtent2D swapChainExtent;
+  std::unique_ptr<std::vector<VkImageView>, std::function<void(std::vector<VkImageView>*)>> _swapChainImageViews{
+      new std::vector<VkImageView>,
+      [this](std::vector<VkImageView>* imageViews) {
+        for (auto& imageView : *imageViews) {
+          vkDestroyImageView(*_device, imageView, nullptr);
+        }
+      }
+  };
 };
