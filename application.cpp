@@ -1,4 +1,5 @@
 #include "application.h"
+#include <iostream>
 
 Application::Application() {
   initWindow();
@@ -10,9 +11,10 @@ Application::~Application() {
 }
 
 void Application::run() {
+  drawFrame();
+
   while (!glfwWindowShouldClose(_window.get())) {
     glfwPollEvents();
-    drawFrame();
   }
 
   vkDeviceWaitIdle(*_device);
@@ -643,7 +645,7 @@ void Application::initCommandBuffers() {
 
     vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, *_graphicsPipeline);
 
-    vkCmdDraw(_commandBuffers[i], 3, 1, 0, 0);
+    vkCmdDraw(_commandBuffers[i], 6, 1, 0, 0);
 
     vkCmdEndRenderPass(_commandBuffers[i]);
 
