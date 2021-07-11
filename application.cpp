@@ -24,7 +24,6 @@ void Application::run() {
   glfwGetCursorPos(_window, &mouseX, &mouseY);
 
   auto lastRender = timer::now();
-
   while (!glfwWindowShouldClose(_window)) {
     glfwPollEvents();
 
@@ -60,6 +59,7 @@ void Application::run() {
 
       _vulkan->pushConstants(_camera);  // TODO: Refactor updating camera in shader
       _vulkan->drawFrame();
+      lastRender = timer::now();
     }
   }
 
