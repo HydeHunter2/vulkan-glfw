@@ -1,3 +1,3 @@
-# vulkan-glfw [Ray tracing]
+# vulkan-glfw [Ray tracing & Moving]
 
-![IMAGE 2021-07-10 21:00:58](https://user-images.githubusercontent.com/46248839/125172349-f3ca6f00-e1c1-11eb-8ab2-c9383c8eb78d.jpg)
+![GIF](https://github.com/HydeHunter2/vulkan-glfw/blob/ray-tracing-moving/result/ray_tracing_moving_result.gif)
