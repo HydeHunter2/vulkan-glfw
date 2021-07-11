@@ -7,7 +7,7 @@ find_package(glfw3 3.3 REQUIRED)
 find_package(glm)
 find_package(Vulkan)
 
-add_executable(vulkan application.cpp main.cpp)
+add_executable(vulkan vulkan.cpp application.cpp main.cpp)
 
 target_link_libraries(vulkan glfw)
 target_link_libraries(vulkan Vulkan::Vulkan)
