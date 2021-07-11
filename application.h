@@ -2,6 +2,7 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
 #include <algorithm>
 #include <optional>
@@ -20,13 +21,22 @@ class Application {
 
  private:
 
+  // Ray tracing
+
+  struct Camera {
+    glm::vec3 origin;
+    float yaw;
+    float pitch;
+  };
+  Camera _camera;
+
   // GLFW
 
   void initWindow();
 
   std::unique_ptr<GLFWwindow, void (*)(GLFWwindow*)> _window{nullptr, nullptr};
   uint32_t _width = 800;
-  uint32_t _height = 600;
+  uint32_t _height = 400;
 
   // Vulkan
 

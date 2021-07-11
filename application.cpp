@@ -9,11 +9,56 @@ Application::~Application() {
   glfwTerminate();
 }
 
-void Application::run() {
-  drawFrame();
+using timer = std::chrono::high_resolution_clock;
+uint64_t timeFrom(const timer::time_point& timePoint) {
+  return std::chrono::duration_cast<std::chrono::milliseconds>(timer::now() - timePoint).count();
+}
 
+void Application::run() {
+  float speed = 0.1;
+  float rotationSpeed = 1. / 250;
+  int fps = 20;
+
+  double mouseX, mouseY;
+  glfwGetCursorPos(_window.get(), &mouseX, &mouseY);
+
+  auto lastRender = timer::now();
   while (!glfwWindowShouldClose(_window.get())) {
     glfwPollEvents();
+
+    if (timeFrom(lastRender) > 1000. / fps) {
+      int w = glfwGetKey(_window.get(), GLFW_KEY_W);
+      int a = glfwGetKey(_window.get(), GLFW_KEY_A);
+      int s = glfwGetKey(_window.get(), GLFW_KEY_S);
+      int d = glfwGetKey(_window.get(), GLFW_KEY_D);
+
+      // TODO: Refactor moving system
+      float yaw = _camera.yaw;
+      if (w == GLFW_PRESS) {
+        _camera.origin += glm::vec3(sin(yaw), 0, cos(yaw)) * speed;
+      }
+      if (a == GLFW_PRESS) {
+        _camera.origin += glm::vec3(sin(yaw - M_PI / 2), 0, cos(yaw - M_PI / 2)) * speed;
+      }
+      if (s == GLFW_PRESS) {
+        _camera.origin += glm::vec3(sin(yaw + M_PI), 0, cos(yaw + M_PI)) * speed;
+      }
+      if (d == GLFW_PRESS) {
+        _camera.origin += glm::vec3(sin(yaw + M_PI  / 2), 0, cos(yaw + M_PI / 2)) * speed;
+      }
+
+      // TODO: Refactor rotation system
+      double xPos, yPos;
+      glfwGetCursorPos(_window.get(), &xPos, &yPos);
+      _camera.yaw += std::clamp((xPos - mouseX) * rotationSpeed, -0.5, 0.5);
+      _camera.pitch -= std::clamp((yPos - mouseY) * rotationSpeed, -0.5, 0.5);
+      _camera.pitch = std::clamp(_camera.pitch, -0.6f, 0.6f);
+      mouseX = xPos;
+      mouseY = yPos;
+
+      initCommandBuffers();  // TODO: Refactor updating camera in shader
+      drawFrame();
+    }
   }
 
   vkDeviceWaitIdle(*_device);
@@ -23,6 +68,7 @@ void Application::initWindow() {
   glfwInit();
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+  glfwSetInputMode(_window.get(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   _window = {glfwCreateWindow(_width, _height, "Vulkan", nullptr, nullptr),
              glfwDestroyWindow};
@@ -468,10 +514,16 @@ void Application::initGraphicsPipeline() {
   colorBlending.blendConstants[2] = 0.0f;
   colorBlending.blendConstants[3] = 0.0f;
 
+  VkPushConstantRange pushConstant;
+  pushConstant.offset = 0;
+  pushConstant.size = sizeof(Camera);
+  pushConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
   VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
   pipelineLayoutInfo.setLayoutCount = 0;
-  pipelineLayoutInfo.pushConstantRangeCount = 0;
+  pipelineLayoutInfo.pushConstantRangeCount = 1;
+  pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
 
   if (vkCreatePipelineLayout(*_device, &pipelineLayoutInfo, nullptr, _pipelineLayout.get()) != VK_SUCCESS) {
     throw std::runtime_error("failed to create pipeline layout!");
@@ -643,6 +695,8 @@ void Application::initCommandBuffers() {
     vkCmdBeginRenderPass(_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, *_graphicsPipeline);
+
+    vkCmdPushConstants(_commandBuffers[i], *_pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Camera), &_camera);
 
     vkCmdDraw(_commandBuffers[i], 6, 1, 0, 0);
 
